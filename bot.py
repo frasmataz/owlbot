@@ -97,5 +97,4 @@ def get_weather():
 
 credfile=open("cred.txt","r")
 cred=str(credfile.read()).strip()
-print(cred)
 client.run(cred)
