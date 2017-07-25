@@ -95,4 +95,7 @@ def get_weather():
     pprint.pprint(f)
     return str(output)
 
-client.run('MzE2NTc4MDE0Mzk5ODIzODcy.DEGnGw.2pygp0pUFXbD01OD73gh6LuibGw')
+credfile=open("cred.txt","r")
+cred=str(credfile.read()).strip()
+print(cred)
+client.run(cred)
