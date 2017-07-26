@@ -38,12 +38,14 @@ async def on_message(message):
 
     if message.content.startswith('!droneweather'):
         await client.send_message(message.channel, get_weather())
+
     elif message.content.startswith('!start'):
         await client.send_message(message.channel, 'tell me a story daddy')
         onewordeachrecording = True
         onewordchannel = message.channel.name
         onewordeachbuffer = []
         onewordeachbuffer.append('```')
+
     elif message.content.startswith('!inspireme'):
         await client.send_message(message.channel, 'oh boy here we go story time')
         word = str(requests.get("http://setgetgo.com/randomword/get.php").text)
@@ -53,6 +55,7 @@ async def on_message(message):
         onewordeachbuffer.append('```')
         await client.send_message(message.channel, word)
         onewordeachbuffer.append(word + ' ')
+
     elif message.content.startswith('!stop'):
         onewordeachbuffer.append('```')
         onewordeachrecording = False
@@ -61,6 +64,12 @@ async def on_message(message):
         msg = await client.send_message(message.channel, fullstory)
         await client.pin_message(msg)
         onewordeachbuffer = []
+
+    elif message.content.startswith('!fuckoff'):
+        onewordeachrecording = False
+        await client.send_message(message.channel, 'ok jees i will')
+        onewordeachbuffer = []
+
     else:
         if (onewordeachrecording
         and message.channel.name == onewordchannel
