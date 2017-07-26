@@ -12,6 +12,8 @@ warnlinkratio = 0.2
 maxlinkratio = 0.6
 client = discord.Client()
 users = {}
+onewordeachrecording = False
+onewordeachbuffer = []
 
 @client.event
 async def on_ready():
@@ -23,6 +25,9 @@ async def on_ready():
 @client.event
 async def on_message(message):
     global users
+    global onewordeachrecording
+    global onewordeachbuffer
+
     for role in message.server.roles:
         if role.name == 'admin':
             adminrole = role
@@ -31,7 +36,24 @@ async def on_message(message):
 
     if message.content.startswith('!droneweather'):
         await client.send_message(message.channel, get_weather())
+    elif message.content.startswith('!start'):
+        await client.send_message(message.channel, 'tell me a story daddy')
+        onewordeachrecording = True
+        onewordeachbuffer = []
+        onewordeachbuffer.append('```')
+    elif message.content.startswith('!stop'):
+        onewordeachbuffer.append('```')
+        onewordeachrecording = False
+        fullstory = ''.join(onewordeachbuffer)
+        await client.send_message(message.channel, 'wow that was really good thanks, here it is agen')
+        msg = await client.send_message(message.channel, fullstory)
+        await client.pin_message(msg)
+        onewordeachbuffer = []
     else:
+        if onewordeachrecording:
+            onewordeachbuffer.append(message.content)
+            onewordeachbuffer.append(' ')
+
         if not username in users:
             users[username] = {
                 "links": 0,
