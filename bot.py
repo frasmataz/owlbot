@@ -36,7 +36,8 @@ async def on_message(message):
             users[username] = {
                 "links": 0,
                 "not-links": 0,
-                "linksinarow": 0
+                "linksinarow": 0,
+                "warned": False
             }
 
         messagelinks = re.findall("http[s]?://",message.content)
@@ -45,6 +46,17 @@ async def on_message(message):
             await client.send_message(message.channel, "You're sitting at " +
                 str(users[username]["links"]) + " links, and " +
                 str(users[username]["not-links"]) + " not-links.")
+        elif message.content.startswith("!allrep"):
+            output = ['```']
+            for key, value in users.items():
+                output.append(key+":\n")
+                output.append("\tlinks: "+str(value["links"])+"\n")
+                output.append("\tnotlinks: "+str(value["not-links"])+"\n")
+                output.append("\tlinksinarow: "+str(value["linksinarow"])+"\n")
+                output.append("\twarned: "+str(value["warned"])+"\n")
+                output.append('\n')
+            output.append('```')
+            await client.send_message(message.channel, ''.join(output))
         elif message.content.startswith("!reset") and adminrole in message.author.roles:
             users = {}
         else:
