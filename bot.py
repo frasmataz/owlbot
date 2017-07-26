@@ -44,6 +44,15 @@ async def on_message(message):
         onewordchannel = message.channel.name
         onewordeachbuffer = []
         onewordeachbuffer.append('```')
+    elif message.content.startswith('!inspireme'):
+        await client.send_message(message.channel, 'oh boy here we go story time')
+        word = str(requests.get("http://setgetgo.com/randomword/get.php").text)
+        onewordeachrecording = True
+        onewordchannel = message.channel.name
+        onewordeachbuffer = []
+        onewordeachbuffer.append('```')
+        await client.send_message(message.channel, word)
+        onewordeachbuffer.append(word + ' ')
     elif message.content.startswith('!stop'):
         onewordeachbuffer.append('```')
         onewordeachrecording = False
