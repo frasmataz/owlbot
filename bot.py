@@ -14,6 +14,7 @@ client = discord.Client()
 users = {}
 onewordeachrecording = False
 onewordeachbuffer = []
+onewordchannel = ''
 
 @client.event
 async def on_ready():
@@ -27,6 +28,7 @@ async def on_message(message):
     global users
     global onewordeachrecording
     global onewordeachbuffer
+    global onewordchannel
 
     for role in message.server.roles:
         if role.name == 'admin':
@@ -39,6 +41,7 @@ async def on_message(message):
     elif message.content.startswith('!start'):
         await client.send_message(message.channel, 'tell me a story daddy')
         onewordeachrecording = True
+        onewordchannel = message.channel.name
         onewordeachbuffer = []
         onewordeachbuffer.append('```')
     elif message.content.startswith('!stop'):
@@ -50,7 +53,9 @@ async def on_message(message):
         await client.pin_message(msg)
         onewordeachbuffer = []
     else:
-        if onewordeachrecording:
+        if (onewordeachrecording
+        and message.channel.name == onewordchannel
+        and not username.startswith('owlbot')):
             onewordeachbuffer.append(message.content)
             onewordeachbuffer.append(' ')
 
