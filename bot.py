@@ -7,7 +7,7 @@ import json
 import pprint
 import re
 
-linksinarowtotrigger = 2
+linktrigger = 2
 warnlinkratio = 0.2
 maxlinkratio = 0.6
 client = discord.Client()
@@ -16,12 +16,28 @@ onewordeachrecording = False
 onewordeachbuffer = []
 onewordchannel = ''
 
+botmessages = {
+    'storystart':   'tell me a story daddy',
+    'storyend':     'wow that was really good thanks, here it is agen',
+    'storyinspire': 'oh boy here we go story time',
+    'storycancel':  'ok jees i will',
+    'myrep':        'You\'re sitting at {} links, and {} not-links.',
+    'allrep':       '{}:\n\tlinks: {}\n\tnot-links: {}\n\tlinksinarow: {}\n\twarned: {}\n\n',
+    'linkwarn1':    'Hey {}, watch that link spam boyo',
+    'linkwarn2':    '{} STAHP',
+    'linkwarn3':    '{} always with the linking REEEEEEEEEEEEE {}',
+    'linkwarn4':    '{} arming kick button, last warning. {}',
+    'linkkick':     'kicking {}, so say we all'
+}
+
+
 @client.event
 async def on_ready():
     print('Logged in as')
     print(client.user.name)
     print(client.user.id)
     print('------')
+
 
 @client.event
 async def on_message(message):
@@ -40,14 +56,14 @@ async def on_message(message):
         await client.send_message(message.channel, get_weather())
 
     elif message.content.startswith('!start'):
-        await client.send_message(message.channel, 'tell me a story daddy')
+        await client.send_message(message.channel, botmesaages['storystart'])
         onewordeachrecording = True
         onewordchannel = message.channel.name
         onewordeachbuffer = []
         onewordeachbuffer.append('```')
 
     elif message.content.startswith('!inspireme'):
-        await client.send_message(message.channel, 'oh boy here we go story time')
+        await client.send_message(message.channel, botmessages['storyinspire'])
         word = str(requests.get("http://setgetgo.com/randomword/get.php").text)
         onewordeachrecording = True
         onewordchannel = message.channel.name
@@ -60,20 +76,20 @@ async def on_message(message):
         onewordeachbuffer.append('```')
         onewordeachrecording = False
         fullstory = ''.join(onewordeachbuffer)
-        await client.send_message(message.channel, 'wow that was really good thanks, here it is agen')
+        await client.send_message(message.channel, botmessages['storyend'])
         msg = await client.send_message(message.channel, fullstory)
         await client.pin_message(msg)
         onewordeachbuffer = []
 
     elif message.content.startswith('!fuckoff'):
         onewordeachrecording = False
-        await client.send_message(message.channel, 'ok jees i will')
+        await client.send_message(message.channel, botmessages['storycancel'])
         onewordeachbuffer = []
 
     else:
-        if (onewordeachrecording
-        and message.channel.name == onewordchannel
-        and not username.startswith('owlbot')):
+        if (onewordeachrecording and
+                message.channel.name == onewordchannel and not
+                username.startswith('owlbot')):
             onewordeachbuffer.append(message.content)
             onewordeachbuffer.append(' ')
 
@@ -85,64 +101,69 @@ async def on_message(message):
                 "warned": False
             }
 
-        messagelinks = re.findall("http[s]?://",message.content)
+        messagelinks = re.findall("http[s]?://", message.content)
 
         if message.content.startswith("!rep"):
-            await client.send_message(message.channel, "You're sitting at " +
-                str(users[username]["links"]) + " links, and " +
-                str(users[username]["not-links"]) + " not-links.")
-        elif message.content.startswith("!allrep"):
+            await client.send_message(message.channel, botmessages['myrep'].format(users[username]["links"], users[username]["not-links"]))
+
+        elif message.content.startswith("!allrep") and adminrole in message.author.roles:
             output = ['```']
             for key, value in users.items():
-                output.append(key+":\n")
-                output.append("\tlinks: "+str(value["links"])+"\n")
-                output.append("\tnotlinks: "+str(value["not-links"])+"\n")
-                output.append("\tlinksinarow: "+str(value["linksinarow"])+"\n")
-                output.append("\twarned: "+str(value["warned"])+"\n")
-                output.append('\n')
+                output.append(botmessages['allrep'].format(
+                    key,
+                    value["links"],
+                    value["not-links"],
+                    value["linksinarow"],
+                    value["warned"]
+                ))
             output.append('```')
             await client.send_message(message.channel, ''.join(output))
+
         elif message.content.startswith("!reset") and adminrole in message.author.roles:
             users = {}
+
         else:
             if not messagelinks:
                 users[username]["not-links"] += 1
                 users[username]["linksinarow"] = 0
                 users[username]["warned"] = False
+
             else:
                 users[username]["links"] += 1
                 users[username]["linksinarow"] += 1
 
-                if (users[username]["not-links"] > 0
-                and (users[username]["links"] / users[username]["not-links"] > warnlinkratio)):
+                if (users[username]["not-links"] > 0 and
+                        (users[username]["links"] / users[username]["not-links"] > warnlinkratio)):
                     if (users[username]["links"] / users[username]["not-links"] > maxlinkratio):
-                        if users[username]["linksinarow"] == 2:
-                            await client.send_message(message.channel, message.author.mention+" ALL YOU DO IS LINK, STAHP.  REEEEEEEEEEE " + adminrole.mention)
+                        if users[username]["linksinarow"] == linktrigger:
+                            await client.send_message(message.channel, botmessages['linkwarn3'].format(message.author.mention, adminrole.mention))
 
-                        elif users[username]["linksinarow"] >= 3:
+                        elif users[username]["linksinarow"] >= linktrigger + 1:
                             if users[username]["warned"] == True:
-                                await client.send_message(message.channel, "kickin fuck outta " + message.author.mention)
+                                await client.send_message(message.channel, botmessages['linkkick'].format(message.author.mention))
                                 await client.kick(message.author)
-                                await client.send_message(message.channel, "so say we all")
 
                             else:
-                                await client.send_message(message.channel, message.author.mention+", "+adminrole.mention+" arming kick button, you've been warned")
+                                await client.send_message(message.channel, botmessages['linkwarn3'].format(message.author.mention, adminrole.mention))
                                 users[username]["warned"] = True
 
                     else:
-                        if users[username]["linksinarow"] == 2:
-                            await client.send_message(message.channel, "Hey "+message.author.mention+", watch that link spam boyo")
+                        if users[username]["linksinarow"] == linktrigger:
+                            await client.send_message(message.channel, botmessages['linkwarn1'].format(message.author.mention))
 
-                        elif users[username]["linksinarow"] >= 3:
-                            await client.send_message(message.channel, message.author.mention+" STAHP")
+                        elif users[username]["linksinarow"] >= linktrigger + 1:
+                            await client.send_message(message.channel, botmessages['linkwarn2'].format(message.author.mention))
 
                 users[username]["lastmessage"] = "linked"
 
+
 def get_weather():
-    forecastdayname = calendar.day_name[(datetime.datetime.now() + datetime.timedelta(days=2)).weekday()]
+    forecastdayname = calendar.day_name[(
+        datetime.datetime.now() + datetime.timedelta(days=2)).weekday()]
     forecastday = (datetime.datetime.now() + datetime.timedelta(days=2)).day
     print(forecastday)
-    r = requests.get("http://api.wunderground.com/api/156083f0b1191a7a/hourly10day/q/gb/edinburgh.json")
+    r = requests.get(
+        "http://api.wunderground.com/api/156083f0b1191a7a/hourly10day/q/gb/edinburgh.json")
 
     f = None
 
@@ -154,11 +175,12 @@ def get_weather():
     windspd = f['wspd']['metric']
 
     output = (forecastdayname + ' 18:00: ' +
-        ('raining, ' if rain else 'not raining, ') +
-        ('windy' if int(windspd) > 15 else 'not windy'))
+              ('raining, ' if rain else 'not raining, ') +
+              ('windy' if int(windspd) > 15 else 'not windy'))
     pprint.pprint(f)
     return str(output)
 
-credfile=open("cred.txt","r")
-cred=str(credfile.read()).strip()
+
+credfile = open("cred.txt", "r")
+cred = str(credfile.read()).strip()
 client.run(cred)
