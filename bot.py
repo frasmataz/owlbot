@@ -62,34 +62,28 @@ async def on_message(message):
 
     elif message.content.startswith('!start'):
         await client.send_message(message.channel, botmessages['storystart'])
-        onewordeachrecording = True
-        onewordchannel = message.channel.name
-        onewordeachbuffer = []
-        onewordeachbuffer.append('```')
+        start_story(message)
 
     elif message.content.startswith('!inspireme'):
         await client.send_message(message.channel, botmessages['storyinspire'])
         word = str(requests.get("http://setgetgo.com/randomword/get.php").text)
-        onewordeachrecording = True
-        onewordchannel = message.channel.name
-        onewordeachbuffer = []
-        onewordeachbuffer.append('```')
+        start_story(message)
         await client.send_message(message.channel, word)
         onewordeachbuffer.append(word + ' ')
 
     elif message.content.startswith('!stop'):
         onewordeachbuffer.append('```')
         onewordeachrecording = False
+        onewordeachbuffer = []
         fullstory = ''.join(onewordeachbuffer)
         await client.send_message(message.channel, botmessages['storyend'])
         msg = await client.send_message(message.channel, fullstory)
         await client.pin_message(msg)
-        onewordeachbuffer = []
 
     elif message.content.startswith('!fuckoff'):
         onewordeachrecording = False
-        await client.send_message(message.channel, botmessages['storycancel'])
         onewordeachbuffer = []
+        await client.send_message(message.channel, botmessages['storycancel'])
 
     elif message.content.startswith('!update') and adminrole in message.author.roles:
         await client.send_message(message.channel, botmessages['updating'])
@@ -172,6 +166,14 @@ async def on_message(message):
 
             users[username]["lastmessage"] = "linked"
 
+def start_story(message):
+    global onewordeachrecording
+    global onewordeachbuffer
+    global onewordchannel
+    onewordeachrecording = True
+    onewordchannel = message.channel.name
+    onewordeachbuffer = []
+    onewordeachbuffer.append('```')
 
 def get_weather():
     forecastdayname = calendar.day_name[(
