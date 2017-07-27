@@ -6,6 +6,8 @@ import calendar
 import json
 import pprint
 import re
+import subprocess
+import sys
 
 linktrigger = 2
 warnlinkratio = 0.2
@@ -27,7 +29,10 @@ botmessages = {
     'linkwarn2':    '{} STAHP',
     'linkwarn3':    '{} always with the linking REEEEEEEEEEEEE {}',
     'linkwarn4':    '{} arming kick button, last warning. {}',
-    'linkkick':     'kicking {}, so say we all'
+    'linkkick':     'kicking {}, so say we all',
+    'updating':     'Updating owlbot..',
+    'version':      'Git revision: {},
+    'restart':      'killing self brb'
 }
 
 
@@ -85,6 +90,18 @@ async def on_message(message):
         onewordeachrecording = False
         await client.send_message(message.channel, botmessages['storycancel'])
         onewordeachbuffer = []
+
+    elif message.content.startswith('!update') and adminrole in message.author.roles:
+        await client.send_message(message.channel, botmessages['updating'])
+        gitout = subprocess.check_output(["git", "pull", "origin", "master"]).decode('UTF-8')
+        await client.send_message(message.channel, gitout)
+        await client.send_message(message.channel, botmessages['restart'])
+        subprocess.Popen(['python3', './bot.py'])
+        sys.exit(0)
+
+    elif message.content.startswith('!version') and adminrole in message.author.roles:
+        v = subprocess.check_output(["git", "describe", "--always"])
+        await client.send_message(message.channel, botmessages['version'].format(v.decode('UTF-8')))
 
     else:
         if (onewordeachrecording and
