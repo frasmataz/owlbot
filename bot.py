@@ -31,7 +31,7 @@ botmessages = {
     'linkwarn4':    '{} arming kick button, last warning. {}',
     'linkkick':     'kicking {}, so say we all',
     'updating':     'Updating owlbot..',
-    'version':      'Git revision: {},
+    'version':      'Git revision: {}',
     'restart':      'killing self brb'
 }
 
