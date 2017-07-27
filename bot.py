@@ -61,7 +61,7 @@ async def on_message(message):
         await client.send_message(message.channel, get_weather())
 
     elif message.content.startswith('!start'):
-        await client.send_message(message.channel, botmesaages['storystart'])
+        await client.send_message(message.channel, botmessages['storystart'])
         onewordeachrecording = True
         onewordchannel = message.channel.name
         onewordeachbuffer = []
@@ -103,6 +103,25 @@ async def on_message(message):
         v = subprocess.check_output(["git", "describe", "--always"])
         await client.send_message(message.channel, botmessages['version'].format(v.decode('UTF-8')))
 
+    elif message.content.startswith("!rep"):
+        await client.send_message(message.channel, botmessages['myrep'].format(users[username]["links"], users[username]["not-links"]))
+
+    elif message.content.startswith("!allrep") and adminrole in message.author.roles:
+        output = ['```']
+        for key, value in users.items():
+            output.append(botmessages['allrep'].format(
+                key,
+                value["links"],
+                value["not-links"],
+                value["linksinarow"],
+                value["warned"]
+            ))
+        output.append('```')
+        await client.send_message(message.channel, ''.join(output))
+
+    elif message.content.startswith("!reset") and adminrole in message.author.roles:
+        users = {}
+
     else:
         if (onewordeachrecording and
                 message.channel.name == onewordchannel and not
@@ -120,58 +139,38 @@ async def on_message(message):
 
         messagelinks = re.findall("http[s]?://", message.content)
 
-        if message.content.startswith("!rep"):
-            await client.send_message(message.channel, botmessages['myrep'].format(users[username]["links"], users[username]["not-links"]))
-
-        elif message.content.startswith("!allrep") and adminrole in message.author.roles:
-            output = ['```']
-            for key, value in users.items():
-                output.append(botmessages['allrep'].format(
-                    key,
-                    value["links"],
-                    value["not-links"],
-                    value["linksinarow"],
-                    value["warned"]
-                ))
-            output.append('```')
-            await client.send_message(message.channel, ''.join(output))
-
-        elif message.content.startswith("!reset") and adminrole in message.author.roles:
-            users = {}
+        if not messagelinks:
+            users[username]["not-links"] += 1
+            users[username]["linksinarow"] = 0
+            users[username]["warned"] = False
 
         else:
-            if not messagelinks:
-                users[username]["not-links"] += 1
-                users[username]["linksinarow"] = 0
-                users[username]["warned"] = False
+            users[username]["links"] += 1
+            users[username]["linksinarow"] += 1
 
-            else:
-                users[username]["links"] += 1
-                users[username]["linksinarow"] += 1
+            if (users[username]["not-links"] > 0 and
+                    (users[username]["links"] / users[username]["not-links"] > warnlinkratio)):
+                if (users[username]["links"] / users[username]["not-links"] > maxlinkratio):
+                    if users[username]["linksinarow"] == linktrigger:
+                        await client.send_message(message.channel, botmessages['linkwarn3'].format(message.author.mention, adminrole.mention))
 
-                if (users[username]["not-links"] > 0 and
-                        (users[username]["links"] / users[username]["not-links"] > warnlinkratio)):
-                    if (users[username]["links"] / users[username]["not-links"] > maxlinkratio):
-                        if users[username]["linksinarow"] == linktrigger:
+                    elif users[username]["linksinarow"] >= linktrigger + 1:
+                        if users[username]["warned"] == True:
+                            await client.send_message(message.channel, botmessages['linkkick'].format(message.author.mention))
+                            await client.kick(message.author)
+
+                        else:
                             await client.send_message(message.channel, botmessages['linkwarn3'].format(message.author.mention, adminrole.mention))
+                            users[username]["warned"] = True
 
-                        elif users[username]["linksinarow"] >= linktrigger + 1:
-                            if users[username]["warned"] == True:
-                                await client.send_message(message.channel, botmessages['linkkick'].format(message.author.mention))
-                                await client.kick(message.author)
+                else:
+                    if users[username]["linksinarow"] == linktrigger:
+                        await client.send_message(message.channel, botmessages['linkwarn1'].format(message.author.mention))
 
-                            else:
-                                await client.send_message(message.channel, botmessages['linkwarn3'].format(message.author.mention, adminrole.mention))
-                                users[username]["warned"] = True
+                    elif users[username]["linksinarow"] >= linktrigger + 1:
+                        await client.send_message(message.channel, botmessages['linkwarn2'].format(message.author.mention))
 
-                    else:
-                        if users[username]["linksinarow"] == linktrigger:
-                            await client.send_message(message.channel, botmessages['linkwarn1'].format(message.author.mention))
-
-                        elif users[username]["linksinarow"] >= linktrigger + 1:
-                            await client.send_message(message.channel, botmessages['linkwarn2'].format(message.author.mention))
-
-                users[username]["lastmessage"] = "linked"
+            users[username]["lastmessage"] = "linked"
 
 
 def get_weather():
