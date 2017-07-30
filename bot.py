@@ -74,8 +74,8 @@ async def on_message(message):
     elif message.content.startswith('!stop'):
         onewordeachbuffer.append('```')
         onewordeachrecording = False
-        onewordeachbuffer = []
         fullstory = ''.join(onewordeachbuffer)
+        onewordeachbuffer = []
         await client.send_message(message.channel, botmessages['storyend'])
         msg = await client.send_message(message.channel, fullstory)
         await client.pin_message(msg)
